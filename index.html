@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmotiSense — Facial Emotion Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --card: #1a1a28;
+    --border: #2a2a40; --accent: #7c5cfc; --accent2: #fc5c7d;
+    --text: #e8e8f0; --muted: #6b6b8a; --success: #5cfca2;
+    --angry:#fc5c5c; --disgust:#8afc5c; --fear:#fc5ca8;
+    --happy:#fcdb5c; --neutral:#5cc8fc; --sad:#5c7dfc; --surprise:#c85cfc;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif; min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  nav {
+    position: fixed; top:0; left:0; right:0;
+    background: rgba(10,10,15,0.8); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex; align-items:center; justify-content:space-between;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  nav a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; transition: color 0.2s;
+  }
+  nav a:hover { color: var(--text); }
+  .hero {
+    padding: 120px 2rem 60px; text-align: center;
+    position: relative; z-index: 1;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.3);
+    color: var(--accent); font-size: 0.8rem; font-weight: 600;
+    padding: 0.4rem 1rem; border-radius: 100px;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem;
+  }
+  h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    color: var(--muted); font-size: 1.1rem;
+    max-width: 500px; margin: 0 auto 3rem; line-height: 1.7;
+  }
+  .stats-bar {
+    display: flex; justify-content: center; gap: 3rem;
+    margin-bottom: 4rem; flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+  .main-card {
+    max-width: 900px; margin: 0 auto;
+    padding: 0 2rem 4rem; position: relative; z-index: 1;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 2.5rem;
+  }
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 16px;
+    padding: 3rem 2rem; text-align: center; cursor: pointer;
+    transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent); background: rgba(124,92,252,0.05);
+  }
+  .upload-zone input { display: none; }
+  .upload-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+  .upload-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .upload-sub { color: var(--muted); font-size: 0.9rem; }
+  .btn-row {
+    display: flex; gap: 1rem; margin-top: 1.5rem;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-block; padding: 0.8rem 1.5rem;
+    background: var(--accent); color: var(--text);
+    border: none; border-radius: 5px;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.3s;
+  }
+  .btn:hover { background: var(--accent2); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #9c7cfc); color: white;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(124,92,252,0.4); }
+  .btn-secondary {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .preview-section { display: none; margin-top: 2rem; }
+  .preview-img {
+    width: 100%; max-height: 300px; object-fit: contain;
+    border-radius: 12px; border: 1px solid var(--border);
+  }
+  .result-section { display: none; margin-top: 2rem; }
+  .result-main {
+    display: flex; align-items: center; gap: 1.5rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .result-emoji { font-size: 4rem; }
+  .result-info { flex: 1; }
+  .result-emotion {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .result-conf { color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem; }
+  .confidence-ring { width: 80px; height: 80px; position: relative; }
+  .confidence-ring svg { transform: rotate(-90deg); }
+  .conf-text {
+    position: absolute; inset:0;
+    display: flex; align-items:center; justify-content:center;
+    font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 800;
+  }
+  .prob-title {
+    font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 1rem;
+  }
+  .prob-item { margin-bottom: 0.8rem; }
+  .prob-header {
+    display: flex; justify-content: space-between;
+    margin-bottom: 0.3rem; font-size: 0.9rem;
+  }
+  .prob-label { display: flex; align-items: center; gap: 0.4rem; }
+  .prob-val { font-weight: 600; font-family: 'Syne', sans-serif; }
+  .prob-bar-bg {
+    background: var(--surface); border-radius: 100px;
+    height: 6px; overflow: hidden;
+  }
+  .prob-bar {
+    height: 100%; border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1); width: 0%;
+  }
+  .loading { display: none; text-align:center; padding: 2rem; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .model-pills {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    margin-top: 1.5rem; justify-content: center;
+  }
+  .pill {
+    background: rgba(124,92,252,0.1); border: 1px solid rgba(124,92,252,0.2);
+    color: var(--accent); font-size: 0.75rem; font-weight: 600;
+    padding: 0.3rem 0.8rem; border-radius: 100px;
+  }
+  .emo-angry{color:var(--angry)} .emo-disgust{color:var(--disgust)}
+  .emo-fear{color:var(--fear)}   .emo-happy{color:var(--happy)}
+  .emo-neutral{color:var(--neutral)} .emo-sad{color:var(--sad)}
+  .emo-surprise{color:var(--surprise)}
+  .bar-angry{background:var(--angry)} .bar-disgust{background:var(--disgust)}
+  .bar-fear{background:var(--fear)}   .bar-happy{background:var(--happy)}
+  .bar-neutral{background:var(--neutral)} .bar-sad{background:var(--sad)}
+  .bar-surprise{background:var(--surprise)}
+  footer {
+    text-align: center; padding: 2rem; color: var(--muted);
+    font-size: 0.85rem; position: relative; z-index:1;
+  }
+</style>
+</head>
+<body>
+<nav>
+  <span class="logo">EmotiSense</span>
+  <a href="/history">History</a>
+</nav>
+<div class="hero">
+  <h1>Facial Emotion Recognition</h1>
+  <p>Upload an image or use your camera to detect emotions.</p>
+  <a href="/camera" class="btn">Use Camera</a>
+</div>
+<div class="main-card">
+  <div class="card">
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <span class="upload-icon">🖼️</span>
+      <div class="upload-title">Drop your image here</div>
+      <div class="upload-sub">or click to browse — JPG, PNG, JPEG supported</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+        📁 Choose Image
+      </button>
+      <button class="btn btn-secondary" onclick="analyzeImage()" id="analyzeBtn" style="display:none">
+        🔍 Analyze Emotion
+      </button>
+      <button class="btn btn-secondary" onclick="resetAll()">🔄 Reset</button>
+    </div>
+    <div class="preview-section" id="previewSection">
+      <img class="preview-img" id="previewImg" src="" alt="Preview">
+    </div>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p style="color:var(--muted)">Analyzing with 4 models...</p>
+    </div>
+    <div class="result-section" id="resultSection">
+      <div class="result-main">
+        <div class="result-emoji" id="resultEmoji"></div>
+        <div class="result-info">
+          <div class="result-emotion" id="resultEmotion"></div>
+          <div class="result-conf" id="resultConf"></div>
+        </div>
+        <div class="confidence-ring">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#2a2a40" stroke-width="6"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="url(#grad)" stroke-width="6"
+                    stroke-linecap="round" id="confCircle"
+                    stroke-dasharray="201" stroke-dashoffset="201"/>
+            <defs>
+              <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7c5cfc"/>
+                <stop offset="100%" stop-color="#fc5c7d"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="conf-text" id="confText"></div>
+        </div>
+      </div>
+      <div class="prob-title">Emotion Probabilities</div>
+      <div id="probBars"></div>
+    </div>
+    <div class="model-pills">
+      <span class="pill">Swin-TL 70.59%</span>
+      <span class="pill">ResNet101-TL 66.87%</span>
+      <span class="pill">GoogleNet 64.25%</span>
+      <span class="pill">Swin+Quantum 56.14%</span>
+    </div>
+  </div>
+</div>
+<footer>
+  EmotiSense — Quantum-Classical Hybrid Ensemble · FER2013 · 41 Models · 72.28% Accuracy
+</footer>
+<script>
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+let selectedFile = null;
+
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () =>
+  uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleFile(f);
+});
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewSection').style.display = 'block';
+    document.getElementById('analyzeBtn').style.display = 'flex';
+    document.getElementById('resultSection').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function analyzeImage() {
+  if (!selectedFile) return;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'none';
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  fetch('/predict', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('loading').style.display = 'none';
+      if (data.error) { alert('Error: ' + data.error); return; }
+      showResult(data);
+    })
+    .catch(err => {
+      document.getElementById('loading').style.display = 'none';
+      alert('Error: ' + err.message);
+    });
+}
+
+function showResult(data) {
+  document.getElementById('resultSection').style.display = 'block';
+  document.getElementById('resultEmoji').textContent = data.emoji;
+  const emotionEl = document.getElementById('resultEmotion');
+  emotionEl.textContent = data.emotion.toUpperCase();
+  emotionEl.className = 'result-emotion emo-' + data.emotion;
+  document.getElementById('resultConf').textContent = `Confidence: ${data.confidence}%`;
+  document.getElementById('confText').textContent = `${Math.round(data.confidence)}%`;
+  const circle = document.getElementById('confCircle');
+  circle.style.strokeDashoffset = 201 - (201 * data.confidence / 100);
+  const container = document.getElementById('probBars');
+  container.innerHTML = '';
+  const sorted = Object.entries(data.probs).sort((a,b) => b[1]-a[1]);
+  sorted.forEach(([emotion, prob]) => {
+    const div = document.createElement('div');
+    div.className = 'prob-item';
+    div.innerHTML = `
+      <div class="prob-header">
+        <span class="prob-label emo-${emotion}">${getEmoji(emotion)} ${emotion}</span>
+        <span class="prob-val">${prob.toFixed(1)}%</span>
+      </div>
+      <div class="prob-bar-bg">
+        <div class="prob-bar bar-${emotion}" style="width:0%" data-width="${prob}"></div>
+      </div>`;
+    container.appendChild(div);
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.prob-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+  }, 100);
+}
+
+function getEmoji(emotion) {
+  const map = {angry:'😠',disgust:'🤢',fear:'😨',happy:'😊',neutral:'😐',sad:'😢',surprise:'😲'};
+  return map[emotion] || '';
+}
+
+function resetAll() {
+  selectedFile = null; fileInput.value = '';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+}
+</script>
+</body>
+</html>

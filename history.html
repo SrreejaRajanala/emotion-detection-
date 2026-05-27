@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmotiSense — History</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#12121a; --card:#1a1a28;
+    --border:#2a2a40; --accent:#7c5cfc; --accent2:#fc5c7d;
+    --text:#e8e8f0; --muted:#6b6b8a;
+    --angry:#fc5c5c; --disgust:#8afc5c; --fear:#fc5ca8;
+    --happy:#fcdb5c; --neutral:#5cc8fc; --sad:#5c7dfc; --surprise:#c85cfc;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(124,92,252,0.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(124,92,252,0.03) 1px,transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+  nav {
+    position:fixed; top:0; left:0; right:0;
+    background:rgba(10,10,15,0.8); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border); padding:1rem 2rem;
+    display:flex; align-items:center; justify-content:space-between; z-index:100;
+  }
+  .logo {
+    font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  nav a { color:var(--muted); text-decoration:none; font-size:0.9rem; font-weight:500; }
+  nav a:hover { color:var(--text); }
+  .container { max-width:1100px; margin:0 auto; padding:100px 2rem 4rem; position:relative; z-index:1; }
+  h1 { font-family:'Syne',sans-serif; font-size:2.5rem; font-weight:800; margin-bottom:0.5rem; }
+  .subtitle { color:var(--muted); margin-bottom:2.5rem; }
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; margin-bottom:2.5rem; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.2rem; text-align:center; }
+  .stat-card .num {
+    font-family:'Syne',sans-serif; font-size:2rem; font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .stat-card .label { color:var(--muted); font-size:0.8rem; margin-top:0.3rem; }
+  .table-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; }
+  .table-header {
+    padding:1.5rem; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .table-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; }
+  table { width:100%; border-collapse:collapse; }
+  th {
+    padding:1rem 1.2rem; text-align:left; color:var(--muted);
+    font-size:0.8rem; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.1em; border-bottom:1px solid var(--border);
+  }
+  td { padding:1rem 1.2rem; border-bottom:1px solid rgba(42,42,64,0.5); font-size:0.9rem; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(124,92,252,0.03); }
+  .emotion-badge {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    padding:0.3rem 0.8rem; border-radius:100px; font-size:0.8rem; font-weight:600;
+  }
+  .badge-angry{background:rgba(252,92,92,0.15);color:var(--angry)}
+  .badge-disgust{background:rgba(138,252,92,0.15);color:var(--disgust)}
+  .badge-fear{background:rgba(252,92,168,0.15);color:var(--fear)}
+  .badge-happy{background:rgba(252,219,92,0.15);color:var(--happy)}
+  .badge-neutral{background:rgba(92,200,252,0.15);color:var(--neutral)}
+  .badge-sad{background:rgba(92,125,252,0.15);color:var(--sad)}
+  .badge-surprise{background:rgba(200,92,252,0.15);color:var(--surprise)}
+  .conf-bar-bg { background:var(--surface); border-radius:100px; height:4px; width:100px; overflow:hidden; }
+  .conf-bar { height:100%; border-radius:100px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .empty { text-align:center; padding:4rem 2rem; color:var(--muted); }
+  .empty-icon { font-size:3rem; margin-bottom:1rem; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">EmotiSense</div>
+  <a href="/">← Back to Analyzer</a>
+</nav>
+<div class="container">
+  <h1>📊 Prediction History</h1>
+  <p class="subtitle">All emotion predictions made by the ensemble model</p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="num">{{ total }}</div>
+      <div class="label">Total Predictions</div>
+    </div>
+    {% for emotion in ['happy','sad','angry','fear','neutral','disgust','surprise'] %}
+    <div class="stat-card">
+      <div class="num">{{ stats.get(emotion, 0) }}</div>
+      <div class="label">{{ emojis[emotion] }} {{ emotion.title() }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">Recent Predictions</div>
+      <span style="color:var(--muted);font-size:0.85rem">Last 50 results</span>
+    </div>
+    {% if rows %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Image</th><th>Emotion</th>
+          <th>Confidence</th><th>Breakdown</th><th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td style="color:var(--muted)">{{ row[0] }}</td>
+          <td style="color:var(--muted);font-size:0.8rem">{{ row[1][:20] }}...</td>
+          <td>
+            <span class="emotion-badge badge-{{ row[2] }}">
+              {{ emojis[row[2]] }} {{ row[2].title() }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.8rem">
+              <div class="conf-bar-bg">
+                <div class="conf-bar" style="width:{{ row[3] }}%"></div>
+              </div>
+              <span style="font-family:'Syne',sans-serif;font-weight:700">
+                {{ "%.1f"|format(row[3]) }}%
+              </span>
+            </div>
+          </td>
+          <td style="font-size:0.8rem;color:var(--muted)">
+            😠{{ "%.0f"|format(row[4]) }}%
+            😊{{ "%.0f"|format(row[7]) }}%
+            😢{{ "%.0f"|format(row[8]) }}%
+            😲{{ "%.0f"|format(row[9]) }}%
+          </td>
+          <td style="color:var(--muted);font-size:0.8rem">{{ row[10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+      <div class="empty-icon">🔍</div>
+      <p>No predictions yet. Go analyze some faces!</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

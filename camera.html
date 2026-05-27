@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Capture</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    margin-top: 20px;
+  }
+  video {
+    margin-top: 20px;
+    border: 2px solid #333;
+    border-radius: 8px;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+</head>
+<body>
+  <h1>Camera Capture</h1>
+  <video id="video" width="640" height="480" autoplay></video>
+  <br>
+  <button id="capture">Capture</button>
+  <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+  <div id="result" style="margin-top: 20px;"></div>
+  <script>
+    const video = document.getElementById('video');
+    const captureButton = document.getElementById('capture');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const resultDiv = document.getElementById('result');
+
+    // Access the webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error('Error accessing the camera:', err);
+        alert('Unable to access the camera.');
+      });
+
+    captureButton.addEventListener('click', () => {
+      // Draw the current video frame onto the canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert the canvas content to a Blob
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('file', blob, 'capture.jpg');
+
+        // Display the captured image on the webpage
+        const capturedImage = document.createElement('img');
+        capturedImage.src = canvas.toDataURL('image/jpeg');
+        capturedImage.alt = 'Captured Image';
+        capturedImage.style = 'max-width: 100%; margin-top: 10px;';
+
+        // Clear previous results and append the captured image
+        resultDiv.innerHTML = '';
+        resultDiv.appendChild(capturedImage);
+
+        // Send the image to the server
+        fetch('/predict', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            resultDiv.innerHTML = `<p style='color: red;'>Error: ${data.error}</p>`;
+          } else {
+            resultDiv.innerHTML = `
+              <p>Emotion: <strong>${data.emotion}</strong> ${data.emoji}</p>
+              <p>Confidence: ${data.confidence}%</p>
+              <img src="${data.image_url}" alt="Captured Image" style="max-width: 100%; margin-top: 10px;">
+            `;
+          }
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          resultDiv.innerHTML = `<p style='color: red;'>An error occurred while processing the image.</p>`;
+        });
+      }, 'image/jpeg');
+    });
+  </script>
+</body>
+</html>
